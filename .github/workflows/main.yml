@@ -60,9 +60,9 @@ jobs:
             --build-arg SPRING_DATASOURCE_PASSWORD="${{ secrets.SPRING_DATASOURCE_PASSWORD }}" \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
-            .
-          # docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG && \
-          # docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+            . && \
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG && \
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
       - name: Checkout Helm chart repository
         uses: actions/checkout@v3
