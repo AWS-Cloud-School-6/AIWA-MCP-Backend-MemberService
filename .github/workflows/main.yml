@@ -53,16 +53,17 @@ jobs:
           IMAGE_TAG: ${{ steps.get_version.outputs.version }}
         run: |
           docker build \
-            --build-arg AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
-            --build-arg AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
-            --build-arg SPRING_DATASOURCE_URL=${{ secrets.SPRING_DATASOURCE_URL }} \
-            --build-arg SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }} \
-            --build-arg SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }} \
-            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
-            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
-            . && \
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG && \
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+            # --build-arg AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+            # --build-arg AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+            # --build-arg SPRING_DATASOURCE_URL=${{ secrets.SPRING_DATASOURCE_URL }} \
+            # --build-arg SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }} \
+            # --build-arg SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }} \
+            # -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            # -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            # . && \
+              -t test .
+          # docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG && \
+          # docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
       - name: Checkout Helm chart repository
         uses: actions/checkout@v3
