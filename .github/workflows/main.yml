@@ -33,10 +33,6 @@ jobs:
           SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
         run: |
           ./gradlew clean bootJar
-      
-      - name: Check for JAR file
-        run: |
-          ls -al build/libs
 
       # 2. AWS CLI 로그인 및 ECR 리포지토리 생성
       - name: Configure AWS Credentials
@@ -59,7 +55,7 @@ jobs:
       - name: Build Docker Image with AWS CLI and Terraform
         env:
           ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com
-          ECR_REPOSITORY: aiwa-project/terraform
+          ECR_REPOSITORY: aiwa-project/member
           IMAGE_TAG: ${{ steps.get_version.outputs.version }}
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
@@ -80,7 +76,7 @@ jobs:
         with:
           repository: AWS-Cloud-School-6/AIWA-MCP-Helm
           path: AIWA-MCP-Helm
-          token: ${{ secrets.PAT_AIWA_TERRA_TOKEN }}
+          token: ${{ secrets.PAT_AIWA_MEMBER_TOKEN }}
 
       # 7. Helm 차트 업데이트
       - name: Update Helm chart
