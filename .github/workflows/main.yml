@@ -79,7 +79,7 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest 
           
       - name: Checkout Helm chart repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
         with:
           repository: AWS-Cloud-School-6/AIWA-MCP-Helm
           path: AIWA-MCP-Helm
@@ -92,7 +92,7 @@ jobs:
             echo "Error: values.yaml not found in $(pwd)"
             exit 1
           fi
-          sed -i 's|tag: .*|tag: "${{ steps.get_version.outputs.version }}"|' values.yaml
+          sed -i "s|tag: .*|tag: \"${{ steps.get_version.outputs.version }}\"|" values.yaml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add values.yaml
