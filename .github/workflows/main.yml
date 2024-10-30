@@ -1,5 +1,5 @@
 name: Build Spring Application and Push to ECR
- 
+
 on:
   push:
     branches:
@@ -30,8 +30,7 @@ jobs:
           SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
           SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
           SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
-        run: |
-          ./gradlew clean bootJar
+        run: ./gradlew clean bootJar
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -41,14 +40,13 @@ jobs:
           aws-region: ap-northeast-2
 
       - name: Log in to Amazon ECR
-        run: |
-          aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin "${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com"
-    
+        run: aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin "${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com"
+
       - name: Generate image tag
         id: get_version
         run: echo "version=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
         
-      - name: Build Docker Image with AWS CLI and Terraform
+      - name: Build and Push Docker Image
         env:
           ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com
           ECR_REPOSITORY: aiwa-project/member
@@ -62,17 +60,10 @@ jobs:
             --build-arg SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }} \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
-            .
+            . && \
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG && \
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-      - name: Push Docker Image to Amazon ECR
-        env:
-          ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com
-          ECR_REPOSITORY: aiwa-project/member
-          IMAGE_TAG: ${{ steps.get_version.outputs.version }}
-        run: |
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest 
-          
       - name: Checkout Helm chart repository
         uses: actions/checkout@v3
         with:
@@ -82,7 +73,7 @@ jobs:
 
       - name: Update Helm chart
         run: |
-          cd AIWA-MCP-Helm/aiwa-member
+          cd AIWA-MCP-HelM/aiwa-member
           if [ ! -f values.yaml ]; then
             echo "Error: values.yaml not found in $(pwd)"
             exit 1
