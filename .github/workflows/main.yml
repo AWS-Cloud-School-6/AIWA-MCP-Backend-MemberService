@@ -1,0 +1,103 @@
+name: Build Spring Application and Push to ECR
+
+on:
+  push:
+    # paths-ignore:
+    #   - ".github/workflows/**" 1
+      
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    outputs:
+      image_tag: ${{ steps.get_version.outputs.version }}
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 1. JDK 설치 후 Spring 애플리케이션 빌드
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: '17'
+      
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build Spring Application with Secrets
+        env:
+          SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
+          SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
+        run: |
+          ./gradlew clean bootJar
+
+      # 2. AWS CLI 로그인 및 ECR 리포지토리 생성
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.INFRA_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.INFRA_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2  # ECR 리포지토리가 있는 AWS 리전을 지정하세요.
+
+      - name: Log in to Amazon ECR
+        run: |
+          aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin "${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com"
+    
+     # 3. 이미지 태그 생성 (날짜-시간 형식)
+      - name: Generate image tag
+        id: get_version
+        run: echo "version=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
+        
+     # 4. ECR 리포지토리에 푸시할 이미지 태그 생성
+      - name: Build Docker Image with AWS CLI and Terraform
+        env:
+          ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com
+          ECR_REPOSITORY: aiwa-project/terraform
+          IMAGE_TAG: ${{ steps.get_version.outputs.version }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+      
+      # 5. ECR로 Docker 이미지 푸시
+      - name: Push Docker Image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com
+          ECR_REPOSITORY: aiwa-project/member
+          IMAGE_TAG: ${{ steps.get_version.outputs.version }}
+        run: |
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest 
+          
+#      # 6. Helm 차트 저장소 체크아웃
+#      - name: Checkout Helm chart repository
+#        uses: actions/checkout@v4
+#        with:
+#          repository: AWS-Cloud-School-6/AIWA-MCP-Helm # Helm 차트 저장소 URL로 변경하세요
+#          path: AIWA-MCP-Helm
+#          token: ${{ secrets.PAT_AIWA_TERRA_TOKEN }} # 개인 액세스 토큰이 필요할 수 있습니다
+#
+#      # 7. Helm 차트 업데이트
+#      - name: Update Helm chart
+#        run: |
+#          cd AIWA-MCP-Helm/aiwa-terra
+#          if [ ! -f values.yaml ]; then
+#            echo "Error: values.yaml not found in $(pwd)"
+#            exit 1
+#          fi
+#          sed -i 's|tag: .*|tag: "${{ steps.get_version.outputs.version }}"|' values.yaml
+#          git config user.name "github-actions[bot]"
+#          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+#          git add values.yaml
+#          if git diff --staged --quiet; then
+#            echo "No changes to commit in values.yaml"
+#          else
+#            git commit -m "Update image tag to ${{ steps.get_version.outputs.version }}"
+#            git push || { echo "Failed to push changes"; exit 2; }
+#          fi
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
