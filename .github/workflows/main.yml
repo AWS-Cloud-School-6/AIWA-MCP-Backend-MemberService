@@ -36,7 +36,7 @@ jobs:
       
       - name: Check for JAR file
         run: |
-          ls -al | grep *.jar
+          ls -al build/libs | grep *.jar
 
       # 2. AWS CLI 로그인 및 ECR 리포지토리 생성
       - name: Configure AWS Credentials
