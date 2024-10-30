@@ -20,7 +20,7 @@ ENV SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
 ENV SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
 
 # 5. 빌드된 JAR 파일을 이미지로 복사
-COPY build/libs/McpBackend-Member-0.0.1-SNAPSHOT.jar /app.jar
+COPY build/libs/MCPBackend-Member-0.0.1-SNAPSHOT.jar /app.jar
 
 # 6. 애플리케이션을 실행할 명령어
 ENTRYPOINT ["java", "-jar", "/app.jar"]
