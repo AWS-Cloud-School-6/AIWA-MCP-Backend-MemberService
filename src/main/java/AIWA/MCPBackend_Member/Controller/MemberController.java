@@ -44,8 +44,8 @@ public class MemberController {
 
 
     // 특정 회원 조회
-    @GetMapping("/email/{email}") // PathVariable로 이메일을 전달
-    public SingleResult<MemberCredentialDTO> getMember(@PathVariable String email) {
+    @GetMapping("/email") // PathVariable로 이메일을 전달
+    public SingleResult<MemberCredentialDTO> getMember(@RequestParam String email) {
         Member findMember = memberService.getMemberByEmail(email);  // Optional을 반환하지 않는다고 가정
         System.out.println(email);
         System.out.println(findMember.getAccess_key());
