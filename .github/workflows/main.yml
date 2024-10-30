@@ -73,7 +73,7 @@ jobs:
 
       - name: Update Helm chart
         run: |
-          cd AIWA-MCP-HelM/aiwa-member
+          cd AIWA-MCP-Helm/aiwa-member
           if [ ! -f values.yaml ]; then
             echo "Error: values.yaml not found in $(pwd)"
             exit 1
