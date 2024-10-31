@@ -59,9 +59,7 @@ public class MemberController {
                     findMember.getSecret_key()
             );
             System.out.println(memberCredentialDTO);
-            SingleResult<MemberCredentialDTO> result = responseService.getSingleResult(memberCredentialDTO);
-            System.out.println(result); // 디버깅을 위해 결과를 출력
-            return result;
+            return responseService.getSingleResult(memberCredentialDTO);
         } else {
             return (SingleResult<MemberCredentialDTO>) responseService.getFailResult();
         }
