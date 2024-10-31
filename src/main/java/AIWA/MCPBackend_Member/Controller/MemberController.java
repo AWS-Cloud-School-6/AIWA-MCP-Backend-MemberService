@@ -47,9 +47,9 @@ public class MemberController {
     @GetMapping("/email") // PathVariable로 이메일을 전달
     public SingleResult<MemberCredentialDTO> getMember(@RequestParam String email) {
         Member findMember = memberService.getMemberByEmail(email);  // Optional을 반환하지 않는다고 가정
-        System.out.println(email);
-        System.out.println(findMember.getAccess_key());
-        System.out.println(findMember.getSecret_key());
+//        System.out.println(email);
+//        System.out.println(findMember.getAccess_key());
+//        System.out.println(findMember.getSecret_key());
 
         if (findMember != null) {
             // Member 정보를 MemberCredentialDTO로 변환
@@ -58,7 +58,10 @@ public class MemberController {
                     findMember.getAccess_key(),
                     findMember.getSecret_key()
             );
-            return responseService.getSingleResult(memberCredentialDTO);
+            System.out.println(memberCredentialDTO);
+            SingleResult<MemberCredentialDTO> result = responseService.getSingleResult(memberCredentialDTO);
+            System.out.println(result); // 디버깅을 위해 결과를 출력
+            return result;
         } else {
             return (SingleResult<MemberCredentialDTO>) responseService.getFailResult();
         }
