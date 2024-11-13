@@ -13,22 +13,18 @@ public class AiwaKey {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "aiwa_key_id")
     private Long id;
 
     @Column(nullable = false)
-    private String companyName; // 고객 회사 이름
+    private String companyName;
 
-    @Column(length = 1000)
-    private String accessKey; // AWS Access Key
-
-    @Column(length = 1000)
-    private String secretKey; // AWS Secret Key
-
-    @Column(length = 2048)
-    private String gcpKeyPath; // GCP 키 파일 S3 경로
+    private String accessKey;
+    private String secretKey;
+    private String gcpKeyPath;
 
     @ManyToOne
-    @JoinColumn(name = "member_id", nullable = false)
+    @JoinColumn(name = "member_id")
     private Member member;
 
     public AiwaKey(String companyName, String accessKey, String secretKey, String gcpKeyPath, Member member) {

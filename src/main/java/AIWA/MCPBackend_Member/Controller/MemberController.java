@@ -50,9 +50,8 @@ public class MemberController {
     }
 
 
-    // 특정 회원 조회 (이메일로)
-    @GetMapping("/email/{email}")
-    public SingleResult<MemberResponseDto> getMemberByEmail(@PathVariable String email) {
+    @GetMapping("/email")
+    public SingleResult<MemberResponseDto> getMemberByEmail(@RequestParam String email) {
         // 특정 회원 조회
         Member member = memberService.getMemberByEmail(email);
         if (member == null) {
@@ -64,27 +63,17 @@ public class MemberController {
 
 
 
-    // AWS 키 추가/업데이트
-    @PostMapping("/add-aws-key")
-    public SingleResult<String> addAwsKey(@RequestBody AddAwsKeyRequestDto addAwsKeyRequestDto) {
-        // AWS 키 추가 및 S3 URL 반환
-        String tfvarsUrl = memberService.addOrUpdateAwsKey(
-                addAwsKeyRequestDto.getEmail(),
-                addAwsKeyRequestDto.getAccessKey(),
-                addAwsKeyRequestDto.getSecretKey()
-        );
-        return responseService.getSingleResult(tfvarsUrl);
-    }
 
-    // GCP 키 추가/업데이트
-    @PostMapping("/add-gcp-key")
-    public SingleResult<String> addGcpKey(@RequestBody AddGcpKeyRequestDto addGcpKeyRequestDto) {
-        // GCP 키 추가 및 S3 URL 반환
-        String gcpKeyUrl = memberService.addOrUpdateGcpKey(
-                addGcpKeyRequestDto.getEmail(),
-                addGcpKeyRequestDto.getGcpKeyContent()
+    // AWS 키 추가/업데이트
+    @PostMapping("/add-aws-gcp-key")
+    public SingleResult<String> addAwsAndGcpKey(@RequestBody AddAwsAndGcpKeyRequestDto requestDto) {
+        String result = memberService.addOrUpdateAwsAndGcpKey(
+                requestDto.getEmail(),
+                requestDto.getAccessKey(),
+                requestDto.getSecretKey(),
+                requestDto.getGcpKeyContent()
         );
-        return responseService.getSingleResult(gcpKeyUrl);
+        return responseService.getSingleResult(result);
     }
 
     // AWS 키 삭제

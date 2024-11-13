@@ -5,9 +5,9 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class AddAwsKeyRequestDto {
+public class AddAwsAndGcpKeyRequestDto {
     private String email;
     private String accessKey;
     private String secretKey;
-    private String companyName;
+    private String gcpKeyContent;
 }

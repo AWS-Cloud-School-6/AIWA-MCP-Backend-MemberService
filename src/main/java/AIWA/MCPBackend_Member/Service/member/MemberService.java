@@ -56,60 +56,28 @@ public class MemberService {
     }
 
 
-    public String addOrUpdateAwsKey(String email, String accessKey, String secretKey) {
+    public String addOrUpdateAwsAndGcpKey(String email, String accessKey, String secretKey, String gcpKeyContent) {
         Member member = getMemberByEmail(email);
 
-        // AWS 키가 있는지 확인하고, 있으면 업데이트, 없으면 추가
+        // 키가 하나의 회사에 대해 AWS와 GCP를 모두 처리할 수 있도록 합니다.
         Optional<AiwaKey> existingAwsKey = member.getAiwaKeys().stream()
                 .filter(key -> "AWS".equalsIgnoreCase(key.getCompanyName()))
                 .findFirst();
 
-        String tfvarsUrl = ""; // URL을 반환할 변수
-
         if (existingAwsKey.isPresent()) {
-            existingAwsKey.get().setAccessKey(accessKey);
-            existingAwsKey.get().setSecretKey(secretKey);
+            AiwaKey awsKey = existingAwsKey.get();
+            awsKey.setAccessKey(accessKey);
+            awsKey.setSecretKey(secretKey);
+            // GCP 키를 추가할 경우 GCP Key Path를 업데이트
+            awsKey.setGcpKeyPath(s3Service.uploadGcpKeyFile(email, gcpKeyContent));
         } else {
-            AiwaKey awsKey = new AiwaKey("AWS", accessKey, secretKey, null, member);
-            member.getAiwaKeys().add(awsKey);
+            AiwaKey newKey = new AiwaKey("AWS", accessKey, secretKey, s3Service.uploadGcpKeyFile(email, gcpKeyContent), member);
+            member.getAiwaKeys().add(newKey);
         }
 
         member = memberRepository.save(member);
 
-        // S3에 AWS tfvars 파일 업로드 후 URL 반환
-        tfvarsUrl = s3Service.createAwsTfvarsFile(email, accessKey, secretKey);
-
-        return tfvarsUrl; // tfvars URL 반환
-    }
-
-    public String addOrUpdateGcpKey(String email, String gcpKeyContent) {
-        Member member = getMemberByEmail(email);
-
-        // GCP 키가 있는지 확인하고, 있으면 업데이트, 없으면 추가
-        Optional<AiwaKey> existingGcpKey = member.getAiwaKeys().stream()
-                .filter(key -> "GCP".equalsIgnoreCase(key.getCompanyName()))
-                .findFirst();
-
-        String gcpKeyUrl = ""; // GCP 키 파일 URL을 저장할 변수
-
-        if (existingGcpKey.isPresent()) {
-            // 기존 GCP 키를 업데이트
-            String gcpKeyPath = s3Service.uploadGcpKeyFile(email, gcpKeyContent);
-            existingGcpKey.get().setGcpKeyPath(gcpKeyPath);
-        } else {
-            // 새 GCP 키를 추가
-            String gcpKeyPath = s3Service.uploadGcpKeyFile(email, gcpKeyContent);
-            AiwaKey gcpKey = new AiwaKey("GCP", null, null, gcpKeyPath, member);
-            member.getAiwaKeys().add(gcpKey);
-        }
-
-        // 회원을 저장
-        member = memberRepository.save(member);
-
-        // GCP 키의 S3 URL 반환
-        gcpKeyUrl = s3Service.uploadGcpKeyFile(email, gcpKeyContent);
-
-        return gcpKeyUrl; // GCP 키 파일 URL 반환
+        return "AWS and GCP keys have been successfully added or updated.";
     }
 
 
