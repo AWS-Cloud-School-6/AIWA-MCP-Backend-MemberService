@@ -3,6 +3,7 @@ package AIWA.MCPBackend_Member.Service.member;
 
 import AIWA.MCPBackend_Member.Dto.MemberDeleteRequestDto;
 import AIWA.MCPBackend_Member.Dto.MemberRequestDto;
+import AIWA.MCPBackend_Member.Entity.AiwaKey;
 import AIWA.MCPBackend_Member.Entity.Member;
 import AIWA.MCPBackend_Member.Repository.MemberRepository;
 import AIWA.MCPBackend_Member.Service.s3.S3Service;
@@ -46,10 +47,6 @@ public class MemberService {
 
 
     // 특정 회원 조회
-    public Optional<Member> getMemberById(Long id) {
-        return memberRepository.findById(id);
-    }
-
     public Member getMemberByEmail(String email) {
         return memberRepository.findByEmail(email);
     }
@@ -59,23 +56,52 @@ public class MemberService {
     }
 
 
-    public Member addOrUpdateKeys(String email,String access_key,String secret_key) {
-
+    public String addOrUpdateAwsAndGcpKey(String email, String accessKey, String secretKey, String gcpKeyContent) {
         Member member = getMemberByEmail(email);
-        member.setAccess_key(access_key);
-        member.setSecret_key(secret_key);
-        s3Service.createTfvarsFile(email,access_key,secret_key);
-        return memberRepository.save(member);
+
+        // 키가 하나의 회사에 대해 AWS와 GCP를 모두 처리할 수 있도록 합니다.
+        Optional<AiwaKey> existingAwsKey = member.getAiwaKeys().stream()
+                .filter(key -> "AWS".equalsIgnoreCase(key.getCompanyName()))
+                .findFirst();
+
+        if (existingAwsKey.isPresent()) {
+            AiwaKey awsKey = existingAwsKey.get();
+            awsKey.setAccessKey(accessKey);
+            awsKey.setSecretKey(secretKey);
+            // GCP 키를 추가할 경우 GCP Key Path를 업데이트
+            awsKey.setGcpKeyPath(s3Service.uploadGcpKeyFile(email, gcpKeyContent));
+        } else {
+            AiwaKey newKey = new AiwaKey("AWS", accessKey, secretKey, s3Service.uploadGcpKeyFile(email, gcpKeyContent), member);
+            member.getAiwaKeys().add(newKey);
+        }
+
+        member = memberRepository.save(member);
+
+        return "AWS and GCP keys have been successfully added or updated.";
     }
 
-    // Access Key와 Secret Key 삭제
-    public Member removeKeys(Long id) {
-        Member member = memberRepository.findById(id)
+
+
+    public Member removeAwsKey(Long memberId) {
+        Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("Member not found"));
 
-        member.setAccess_key(null);
-        member.setSecret_key(null);
+        member.getAiwaKeys().removeIf(key -> "AWS".equalsIgnoreCase(key.getCompanyName()));
 
         return memberRepository.save(member);
     }
+
+
+    public Member removeGcpKey(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("Member not found"));
+
+        // GCP 키를 삭제하고 S3에서 GCP 키 파일도 삭제
+        member.getAiwaKeys().removeIf(key -> "GCP".equalsIgnoreCase(key.getCompanyName()));
+        s3Service.deleteGcpKeyFile(member.getEmail());
+
+        return memberRepository.save(member);
+    }
+
+
 }

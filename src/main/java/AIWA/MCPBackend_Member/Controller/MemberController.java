@@ -1,6 +1,5 @@
 package AIWA.MCPBackend_Member.Controller;
 
-
 import AIWA.MCPBackend_Member.Dto.*;
 import AIWA.MCPBackend_Member.Entity.Member;
 import AIWA.MCPBackend_Member.Service.member.MemberService;
@@ -18,12 +17,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @RequestMapping("/member/api/members")
 public class MemberController {
+
     private final MemberService memberService;
     private final ResponseService responseService;
 
     // 회원 등록
     @PostMapping("/register")
     public SingleResult<MemberResponseDto> registerMember(@RequestBody MemberRequestDto memberRequestDto) {
+        // 회원 등록
         Member savedMember = memberService.registerMember(memberRequestDto);
         MemberResponseDto memberResponseDto = MemberResponseDto.toDto(savedMember);
         return responseService.getSingleResult(memberResponseDto);
@@ -32,49 +33,62 @@ public class MemberController {
     // 회원 삭제
     @DeleteMapping("/delete")
     public CommonResult deleteMember(@RequestBody MemberDeleteRequestDto deleteMemberRequestDto) {
-        // 회원 삭제 서비스 호출
+        // 회원 삭제
         memberService.deleteMember(deleteMemberRequestDto);
-
-        // 성공 응답 반환 (ResponseService를 통해)
         return responseService.getSuccessResult();
     }
 
-
-    // 특정 회원 조회
-    @GetMapping("/email") // PathVariable로 이메일을 전달
-    public SingleResult<MemberCredentialDTO> getMember(@RequestParam String email) {
-        Member findMember = memberService.getMemberByEmail(email);  // Optional을 반환하지 않는다고 가정
-//        System.out.println(email);
-//        System.out.println(findMember.getAccess_key());
-//        System.out.println(findMember.getSecret_key());
-
-        if (findMember != null) {
-            // Member 정보를 MemberCredentialDTO로 변환
-            MemberCredentialDTO memberCredentialDTO = new MemberCredentialDTO(
-                    findMember.getEmail(),
-                    findMember.getAccess_key(),
-                    findMember.getSecret_key()
-            );
-            System.out.println(memberCredentialDTO);
-            return responseService.getSingleResult(memberCredentialDTO);
-        } else {
-            return (SingleResult<MemberCredentialDTO>) responseService.getFailResult();
-        }
-    }
-
+    // 모든 회원 조회
     @GetMapping("/all")
     public ListResult<MemberResponseDto> getAllMembers() {
+        // 모든 회원 조회
         List<Member> members = memberService.getAllMembers();
-        List<MemberResponseDto> memberResponseDtoList = members.stream().map(MemberResponseDto::toDto).collect(Collectors.toList());
+        List<MemberResponseDto> memberResponseDtoList = members.stream()
+                .map(MemberResponseDto::toDto)
+                .collect(Collectors.toList());
         return responseService.getListResult(memberResponseDtoList);
     }
 
-    @PostMapping("/update-credentials")
-    public CommonResult updateCredentials(@RequestBody MemberCredentialDTO memberCredentialDTO) {
-        System.out.println(memberCredentialDTO.getAccessKey());
-        System.out.println(memberCredentialDTO.getSecretKey());
-        memberService.addOrUpdateKeys(memberCredentialDTO.getEmail(),memberCredentialDTO.getAccessKey(), memberCredentialDTO.getSecretKey());
+
+    @GetMapping("/email")
+    public SingleResult<MemberResponseDto> getMemberByEmail(@RequestParam String email) {
+        // 특정 회원 조회
+        Member member = memberService.getMemberByEmail(email);
+        if (member == null) {
+            throw new RuntimeException("Member not found with Email: " + email); // 예외 처리
+        }
+        MemberResponseDto memberResponseDto = MemberResponseDto.toDto(member);
+        return responseService.getSingleResult(memberResponseDto);
+    }
+
+
+
+
+    // AWS 키 추가/업데이트
+    @PostMapping("/add-aws-gcp-key")
+    public SingleResult<String> addAwsAndGcpKey(@RequestBody AddAwsAndGcpKeyRequestDto requestDto) {
+        String result = memberService.addOrUpdateAwsAndGcpKey(
+                requestDto.getEmail(),
+                requestDto.getAccessKey(),
+                requestDto.getSecretKey(),
+                requestDto.getGcpKeyContent()
+        );
+        return responseService.getSingleResult(result);
+    }
+
+    // AWS 키 삭제
+    @DeleteMapping("/delete-aws-key")
+    public CommonResult deleteAwsKey(@RequestBody DeleteKeyRequestDto deleteKeyRequestDto) {
+        // AWS 키 삭제
+        memberService.removeAwsKey(deleteKeyRequestDto.getMemberId());
         return responseService.getSuccessResult();
     }
 
+    // GCP 키 삭제
+    @DeleteMapping("/delete-gcp-key")
+    public CommonResult deleteGcpKey(@RequestBody DeleteKeyRequestDto deleteKeyRequestDto) {
+        // GCP 키 삭제
+        memberService.removeGcpKey(deleteKeyRequestDto.getMemberId());
+        return responseService.getSuccessResult();
+    }
 }

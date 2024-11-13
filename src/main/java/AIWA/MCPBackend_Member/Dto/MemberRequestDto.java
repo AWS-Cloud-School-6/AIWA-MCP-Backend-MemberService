@@ -1,16 +1,12 @@
 package AIWA.MCPBackend_Member.Dto;
 
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
+@Setter
 public class MemberRequestDto {
-    private final String name;
-    private final String password;
-    private final String email;
-
-    public MemberRequestDto(String name, String password, String email) {
-        this.name = name;
-        this.password = password;
-        this.email = email;
-    }
+    private String name;
+    private String email;
+    private String password;
 }
