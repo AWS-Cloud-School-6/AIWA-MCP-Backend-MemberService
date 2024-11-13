@@ -1,14 +1,10 @@
 package AIWA.MCPBackend_Member.Dto;
 
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
-@NoArgsConstructor  // 기본 생성자 추가
+@Setter
 public class MemberDeleteRequestDto {
-    private String email;  // final 제거
-
-    public MemberDeleteRequestDto(String email) {
-        this.email = email;
-    }
+    private String email;
 }

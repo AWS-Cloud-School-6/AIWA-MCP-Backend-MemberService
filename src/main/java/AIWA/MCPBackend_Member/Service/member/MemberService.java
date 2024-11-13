@@ -60,13 +60,15 @@ public class MemberService {
     }
 
 
-    public Member addOrUpdateAwsKey(String email, String accessKey, String secretKey) {
+    public String addOrUpdateAwsKey(String email, String accessKey, String secretKey) {
         Member member = getMemberByEmail(email);
 
         // AWS 키가 있는지 확인하고, 있으면 업데이트, 없으면 추가
         Optional<AiwaKey> existingAwsKey = member.getAiwaKeys().stream()
                 .filter(key -> "AWS".equalsIgnoreCase(key.getCompanyName()))
                 .findFirst();
+
+        String tfvarsUrl = ""; // URL을 반환할 변수
 
         if (existingAwsKey.isPresent()) {
             existingAwsKey.get().setAccessKey(accessKey);
@@ -76,10 +78,15 @@ public class MemberService {
             member.getAiwaKeys().add(awsKey);
         }
 
-        return memberRepository.save(member);
+        member = memberRepository.save(member);
+
+        // S3에 AWS tfvars 파일 업로드 후 URL 반환
+        tfvarsUrl = s3Service.createAwsTfvarsFile(email, accessKey, secretKey);
+
+        return tfvarsUrl; // tfvars URL 반환
     }
 
-    public Member addOrUpdateGcpKey(String email, String gcpKeyContent) {
+    public String addOrUpdateGcpKey(String email, String gcpKeyContent) {
         Member member = getMemberByEmail(email);
 
         // GCP 키가 있는지 확인하고, 있으면 업데이트, 없으면 추가
@@ -87,16 +94,26 @@ public class MemberService {
                 .filter(key -> "GCP".equalsIgnoreCase(key.getCompanyName()))
                 .findFirst();
 
+        String gcpKeyUrl = ""; // GCP 키 파일 URL을 저장할 변수
+
         if (existingGcpKey.isPresent()) {
+            // 기존 GCP 키를 업데이트
             String gcpKeyPath = s3Service.uploadGcpKeyFile(email, gcpKeyContent);
             existingGcpKey.get().setGcpKeyPath(gcpKeyPath);
         } else {
+            // 새 GCP 키를 추가
             String gcpKeyPath = s3Service.uploadGcpKeyFile(email, gcpKeyContent);
             AiwaKey gcpKey = new AiwaKey("GCP", null, null, gcpKeyPath, member);
             member.getAiwaKeys().add(gcpKey);
         }
 
-        return memberRepository.save(member);
+        // 회원을 저장
+        member = memberRepository.save(member);
+
+        // GCP 키의 S3 URL 반환
+        gcpKeyUrl = s3Service.uploadGcpKeyFile(email, gcpKeyContent);
+
+        return gcpKeyUrl; // GCP 키 파일 URL 반환
     }
 
     public Member removeAwsKey(Long memberId) {

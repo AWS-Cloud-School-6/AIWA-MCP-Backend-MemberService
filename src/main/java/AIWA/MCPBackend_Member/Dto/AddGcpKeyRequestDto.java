@@ -5,8 +5,8 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class MemberRequestDto {
-    private String name;
+public class AddGcpKeyRequestDto {
     private String email;
-    private String password;
+    private String gcpKeyContent;
+    private String companyName;
 }

@@ -1,22 +1,19 @@
 package AIWA.MCPBackend_Member.Dto;
 
-
 import AIWA.MCPBackend_Member.Entity.Member;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 public class MemberResponseDto {
-    private String userName;
+    private String name;
     private String email;
-    private String accessKey;
-
-    public MemberResponseDto(String userName, String email, String accessKey) {
-        this.userName = userName;
-        this.email = email;
-        this.accessKey = accessKey;
-    }
 
     public static MemberResponseDto toDto(Member member) {
-        return new MemberResponseDto(member.getName(), member.getEmail(), member.getAccess_key());
+        MemberResponseDto dto = new MemberResponseDto();
+        dto.setName(member.getName());
+        dto.setEmail(member.getEmail());
+        return dto;
     }
 }
