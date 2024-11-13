@@ -1,10 +1,7 @@
 package AIWA.MCPBackend_Member.Controller;
 
 
-import AIWA.MCPBackend_Member.Dto.MemberCredentialDTO;
-import AIWA.MCPBackend_Member.Dto.MemberDeleteRequestDto;
-import AIWA.MCPBackend_Member.Dto.MemberRequestDto;
-import AIWA.MCPBackend_Member.Dto.MemberResponseDto;
+import AIWA.MCPBackend_Member.Dto.*;
 import AIWA.MCPBackend_Member.Entity.Member;
 import AIWA.MCPBackend_Member.Service.member.MemberService;
 import AIWA.MCPBackend_Member.Service.response.ResponseService;
@@ -73,10 +70,10 @@ public class MemberController {
     }
 
     @PostMapping("/update-credentials")
-    public CommonResult updateCredentials(@RequestBody MemberCredentialDTO memberCredentialDto) {
-        System.out.println(memberCredentialDto.getAccessKey());
-        System.out.println(memberCredentialDto.getSecretKey());
-        memberService.addOrUpdateKeys(memberCredentialDto.getEmail(),memberCredentialDto.getAccessKey(), memberCredentialDto.getSecretKey());
+    public CommonResult updateCredentials(@RequestBody CompanyDto companyDto) {
+        System.out.println(companyDto.getAccessKey());
+        System.out.println(companyDto.getSecretKey());
+        memberService.addOrUpdateKeys(companyDto.getUserId(),companyDto.getCompany(),companyDto.getAccessKey(), companyDto.getSecretKey());
         return responseService.getSuccessResult();
     }
 
