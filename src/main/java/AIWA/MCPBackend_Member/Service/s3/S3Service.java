@@ -68,6 +68,22 @@ public class S3Service {
 
         return s3Client.getUrl(bucketName, gcpKeyFileKey).toString(); // S3 URL 반환
     }
+    // GCP 키 파일 삭제
+    public void deleteGcpKeyFile(String userId) {
+        String gcpKeyFileKey = "users/" + userId + "/gcp_credentials.json";
+        if (s3Client.doesObjectExist(bucketName, gcpKeyFileKey)) {
+            s3Client.deleteObject(bucketName, gcpKeyFileKey);
+        }
+    }
+
+    // AWS tfvars 파일 삭제
+    public void deleteAwsTfvarsFile(String userId) {
+        String awsTfvarsKey = "users/" + userId + "/aws_terraform.tfvars";
+        if (s3Client.doesObjectExist(bucketName, awsTfvarsKey)) {
+            s3Client.deleteObject(bucketName, awsTfvarsKey);
+        }
+    }
+
 
     // 사용자 디렉토리 삭제
     public void deleteUserDirectory(String userId) {
@@ -84,19 +100,4 @@ public class S3Service {
         } while (result.isTruncated());
     }
 
-    // GCP 키 파일 삭제
-    public void deleteGcpKeyFile(String userId) {
-        String gcpKeyFileKey = "users/" + userId + "/gcp_credentials.json";
-        if (s3Client.doesObjectExist(bucketName, gcpKeyFileKey)) {
-            s3Client.deleteObject(bucketName, gcpKeyFileKey);
-        }
-    }
-
-    // AWS tfvars 파일 삭제
-    public void deleteAwsTfvarsFile(String userId) {
-        String awsTfvarsKey = "users/" + userId + "/aws_terraform.tfvars";
-        if (s3Client.doesObjectExist(bucketName, awsTfvarsKey)) {
-            s3Client.deleteObject(bucketName, awsTfvarsKey);
-        }
-    }
 }

@@ -98,4 +98,27 @@ public class MemberService {
 
         return memberRepository.save(member);
     }
+
+    public Member removeAwsKey(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("Member not found"));
+
+        member.getAiwaKeys().removeIf(key -> "AWS".equalsIgnoreCase(key.getCompanyName()));
+
+        return memberRepository.save(member);
+    }
+
+
+    public Member removeGcpKey(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("Member not found"));
+
+        // GCP 키를 삭제하고 S3에서 GCP 키 파일도 삭제
+        member.getAiwaKeys().removeIf(key -> "GCP".equalsIgnoreCase(key.getCompanyName()));
+        s3Service.deleteGcpKeyFile(member.getEmail());
+
+        return memberRepository.save(member);
+    }
+
+
 }
