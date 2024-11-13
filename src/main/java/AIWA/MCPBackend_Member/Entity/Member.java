@@ -6,6 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 @Entity
 @Getter
@@ -27,15 +30,12 @@ public class Member {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(length = 1000)
-    private String access_key;
-    @Column(length = 1000)
-    private String secret_key;
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AiwaKey> aiwaKeys = new ArrayList<>();
 
     public Member(String name, String password, String email) {
         this.name = name;
         this.password = password;
         this.email = email;
     }
-
 }
