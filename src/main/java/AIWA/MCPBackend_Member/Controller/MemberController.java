@@ -37,7 +37,7 @@ public class MemberController {
         memberService.deleteMember(deleteMemberRequestDto);
         return responseService.getSuccessResult();
     }
-    
+
     // 모든 회원 조회
     @GetMapping("/all")
     public ListResult<MemberResponseDto> getAllMembers() {
@@ -48,6 +48,21 @@ public class MemberController {
                 .collect(Collectors.toList());
         return responseService.getListResult(memberResponseDtoList);
     }
+
+
+    // 특정 회원 조회 (이메일로)
+    @GetMapping("/email/{email}")
+    public SingleResult<MemberResponseDto> getMemberByEmail(@PathVariable String email) {
+        // 특정 회원 조회
+        Member member = memberService.getMemberByEmail(email);
+        if (member == null) {
+            throw new RuntimeException("Member not found with Email: " + email); // 예외 처리
+        }
+        MemberResponseDto memberResponseDto = MemberResponseDto.toDto(member);
+        return responseService.getSingleResult(memberResponseDto);
+    }
+
+
 
     // AWS 키 추가/업데이트
     @PostMapping("/add-aws-key")

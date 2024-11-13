@@ -47,10 +47,6 @@ public class MemberService {
 
 
     // 특정 회원 조회
-    public Optional<Member> getMemberById(Long id) {
-        return memberRepository.findById(id);
-    }
-
     public Member getMemberByEmail(String email) {
         return memberRepository.findByEmail(email);
     }
@@ -115,6 +111,8 @@ public class MemberService {
 
         return gcpKeyUrl; // GCP 키 파일 URL 반환
     }
+
+
 
     public Member removeAwsKey(Long memberId) {
         Member member = memberRepository.findById(memberId)
