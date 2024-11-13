@@ -70,10 +70,10 @@ public class MemberController {
     }
 
     @PostMapping("/update-credentials")
-    public CommonResult updateCredentials(@RequestBody CompanyDto companyDto) {
-        System.out.println(companyDto.getAccessKey());
-        System.out.println(companyDto.getSecretKey());
-        memberService.addOrUpdateKeys(companyDto.getUserId(),companyDto.getCompany(),companyDto.getAccessKey(), companyDto.getSecretKey());
+    public CommonResult updateCredentials(@RequestBody MemberCredentialDTO memberCredentialDTO) {
+        System.out.println(memberCredentialDTO.getAccessKey());
+        System.out.println(memberCredentialDTO.getSecretKey());
+        memberService.addOrUpdateKeys(memberCredentialDTO.getEmail(),memberCredentialDTO.getAccessKey(), memberCredentialDTO.getSecretKey());
         return responseService.getSuccessResult();
     }
 

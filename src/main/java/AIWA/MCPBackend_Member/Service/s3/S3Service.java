@@ -13,8 +13,8 @@ public class S3Service {
     private final AmazonS3 s3Client;
     private final String bucketName = "aiwa-terraform";
 
-    public void createUserDirectory(String company) {
-        String userPrefix = "users/" + company + "/";
+    public void createUserDirectory(String userId) {
+        String userPrefix = "users/" + userId + "/";
         // 초기 main.tf 및 terraform.tfstate 파일을 업로드합니다
         uploadInitialFiles(userPrefix);
     }
@@ -64,8 +64,8 @@ public class S3Service {
     }
 
 
-    public void createTfvarsFile(String company, String accessKey, String secretKey) {
-        String userPrefix = "users/" + company + "/";
+    public void createTfvarsFile(String userId, String accessKey, String secretKey) {
+        String userPrefix = "users/" + userId + "/";
         String tfvarsContent = String.format("""
             aws_access_key = "%s"
             aws_secret_key = "%s"
