@@ -22,7 +22,9 @@ public class MemberService {
         if (memberRepository.findByEmail(memberRequestDto.getEmail()) != null) {
             throw new RuntimeException("Email already exists");
         }
+        s3Service.createUserDirectory(memberRequestDto.getEmail());
         Member regiMember=new Member(memberRequestDto.getName(), memberRequestDto.getPassword(), memberRequestDto.getEmail());
+
         return memberRepository.save(regiMember);
     }
 
@@ -57,13 +59,12 @@ public class MemberService {
     }
 
 
-    public Member addOrUpdateKeys(String email, String company,String access_key,String secret_key) {
+    public Member addOrUpdateKeys(String email,String access_key,String secret_key) {
 
         Member member = getMemberByEmail(email);
         member.setAccess_key(access_key);
         member.setSecret_key(secret_key);
-        s3Service.createUserDirectory(company);
-        s3Service.createTfvarsFile(company,access_key,secret_key);
+        s3Service.createTfvarsFile(email,access_key,secret_key);
         return memberRepository.save(member);
     }
 
