@@ -1,6 +1,7 @@
 package AIWA.MCPBackend_Member.Controller;
 
 import AIWA.MCPBackend_Member.Dto.*;
+import AIWA.MCPBackend_Member.Entity.AiwaKey;
 import AIWA.MCPBackend_Member.Entity.Member;
 import AIWA.MCPBackend_Member.Service.member.MemberService;
 import AIWA.MCPBackend_Member.Service.response.ResponseService;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -49,18 +51,33 @@ public class MemberController {
         return responseService.getListResult(memberResponseDtoList);
     }
 
-
-    @GetMapping("/email")
-    public SingleResult<MemberResponseDto> getMemberByEmail(@RequestParam String email) {
-        // 특정 회원 조회
-        Member member = memberService.getMemberByEmail(email);
-        if (member == null) {
-            throw new RuntimeException("Member not found with Email: " + email); // 예외 처리
+    @GetMapping("/{email}/{companyName}")
+    public SingleResult<MemberCredentialDto> getMemberKey(
+            @PathVariable String email,
+            @PathVariable String companyName) {
+        Member findMember = memberService.getMemberByEmail(email);
+        if (findMember == null) {
+            return (SingleResult<MemberCredentialDto>) responseService.getFailResult("Member not found");
         }
-        MemberResponseDto memberResponseDto = MemberResponseDto.toDto(member);
-        return responseService.getSingleResult(memberResponseDto);
-    }
 
+        Optional<AiwaKey> matchingKey = findMember.getAiwaKeys().stream()
+                .filter(key -> companyName.equalsIgnoreCase(key.getCompanyName()))
+                .findFirst();
+
+        if (matchingKey.isPresent()) {
+            AiwaKey aiwaKey = matchingKey.get();
+            MemberCredentialDto memberCredentialDto = new MemberCredentialDto(
+                    findMember.getEmail(),
+                    aiwaKey.getAccessKey(),
+                    aiwaKey.getSecretKey()
+            );
+            return responseService.getSingleResult(memberCredentialDto);
+        } else {
+            return (SingleResult<MemberCredentialDto>) responseService.getFailResult(
+                    "No key found for company: " + companyName
+            );
+        }
+    }
 
 
 
@@ -69,6 +86,7 @@ public class MemberController {
     public SingleResult<String> addAwsAndGcpKey(@RequestBody AddAwsAndGcpKeyRequestDto requestDto) {
         String result = memberService.addOrUpdateAwsAndGcpKey(
                 requestDto.getEmail(),
+                requestDto.getCompanyName(),
                 requestDto.getAccessKey(),
                 requestDto.getSecretKey(),
                 requestDto.getGcpKeyContent()

@@ -56,29 +56,45 @@ public class MemberService {
     }
 
 
-    public String addOrUpdateAwsAndGcpKey(String email, String accessKey, String secretKey, String gcpKeyContent) {
+    public String addOrUpdateAwsAndGcpKey(String email, String companyName, String accessKey, String secretKey, String gcpKeyContent) {
+        // 회원 조회
         Member member = getMemberByEmail(email);
+        if (member == null) {
+            throw new RuntimeException("Member not found with Email: " + email);
+        }
 
-        // 키가 하나의 회사에 대해 AWS와 GCP를 모두 처리할 수 있도록 합니다.
-        Optional<AiwaKey> existingAwsKey = member.getAiwaKeys().stream()
-                .filter(key -> "AWS".equalsIgnoreCase(key.getCompanyName()))
+        // AWS 키 처리: "AWS" 또는 다른 회사 키를 처리 가능하도록 수정
+        Optional<AiwaKey> existingKey = member.getAiwaKeys().stream()
+                .filter(key -> companyName.equalsIgnoreCase(key.getCompanyName()))
                 .findFirst();
 
-        if (existingAwsKey.isPresent()) {
-            AiwaKey awsKey = existingAwsKey.get();
-            awsKey.setAccessKey(accessKey);
-            awsKey.setSecretKey(secretKey);
-            // GCP 키를 추가할 경우 GCP Key Path를 업데이트
-            awsKey.setGcpKeyPath(s3Service.uploadGcpKeyFile(email, gcpKeyContent));
+        if (existingKey.isPresent()) {
+            // 기존 키 업데이트
+            AiwaKey key = existingKey.get();
+            key.setAccessKey(accessKey);
+            key.setSecretKey(secretKey);
+
+            // GCP 키 내용이 제공된 경우에만 GCP 키 경로 업데이트
+            if (gcpKeyContent != null && !gcpKeyContent.isEmpty()) {
+                String gcpKeyPath = s3Service.uploadGcpKeyFile(email, gcpKeyContent);
+                key.setGcpKeyPath(gcpKeyPath);
+            }
         } else {
-            AiwaKey newKey = new AiwaKey("AWS", accessKey, secretKey, s3Service.uploadGcpKeyFile(email, gcpKeyContent), member);
+            // 새로운 키 추가
+            String gcpKeyPath = gcpKeyContent != null && !gcpKeyContent.isEmpty()
+                    ? s3Service.uploadGcpKeyFile(email, gcpKeyContent)
+                    : null;
+
+            AiwaKey newKey = new AiwaKey(companyName, accessKey, secretKey, gcpKeyPath, member);
             member.getAiwaKeys().add(newKey);
         }
 
-        member = memberRepository.save(member);
+        // 회원 정보 저장
+        memberRepository.save(member);
 
-        return "AWS and GCP keys have been successfully added or updated.";
+        return String.format("%s keys have been successfully added or updated.", companyName);
     }
+
 
 
 

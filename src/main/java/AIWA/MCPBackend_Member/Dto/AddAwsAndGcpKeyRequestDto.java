@@ -7,6 +7,7 @@ import lombok.Setter;
 @Setter
 public class AddAwsAndGcpKeyRequestDto {
     private String email;
+    private String companyName;
     private String accessKey;
     private String secretKey;
     private String gcpKeyContent;
