@@ -55,6 +55,10 @@ public class MemberController {
     public SingleResult<MemberCredentialDto> getMemberKey(
             @PathVariable String email,
             @PathVariable String companyName) {
+
+        System.out.println(email);
+        System.out.println(companyName);
+
         Member findMember = memberService.getMemberByEmail(email);
         if (findMember == null) {
             return (SingleResult<MemberCredentialDto>) responseService.getFailResult("Member not found");
