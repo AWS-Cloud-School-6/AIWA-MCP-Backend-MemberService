@@ -70,7 +70,9 @@ public class MemberService {
 
         // AWS 및 GCP 키 업데이트 또는 추가
         AiwaKey aiwaKey = findOrCreateAiwaKey(member, companyName);
-
+        aiwaKey.setAccessKey(accessKey);
+        aiwaKey.setSecretKey(secretKey);
+        
         // AWS tfvars 파일 생성 및 URL 반환
         String awsTfvarsUrl = s3Service.createAwsTfvarsFile(email, accessKey, secretKey);
         aiwaKey.setAwsTfvarsUrl(awsTfvarsUrl);
