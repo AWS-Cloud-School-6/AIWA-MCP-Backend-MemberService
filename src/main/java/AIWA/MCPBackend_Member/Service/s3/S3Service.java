@@ -57,17 +57,17 @@ public class S3Service {
           description = "GCP Project ID"
           type        = string
         }
-
+        
         variable "gcp_credentials" {
           description = "GCP Credentials JSON file content"
           type        = string
           sensitive   = true
         }
-
+        
         provider "google" {
           project     = var.gcp_project_id
           region      = "asia-northeast3"
-          credentials = var.gcp_credentials
+          credentials = file(var.gcp_credentials)
         }
         """;
 
@@ -82,7 +82,7 @@ public class S3Service {
             aws_secret_key = "%s"
             """, accessKey, secretKey);
 
-        String tfvarsKey = userPrefix + "aws_terraform.tfvars";
+        String tfvarsKey = userPrefix + "terraform.tfvars";
         s3Client.putObject(bucketName, tfvarsKey, tfvarsContent);
         return s3Client.getUrl(bucketName, tfvarsKey).toString(); // S3 URL 반환
     }
@@ -92,10 +92,10 @@ public class S3Service {
         String userPrefix = "users/" + userId + "/GCP/";
         String tfvarsContent = String.format("""
             gcp_project_id = "%s"
-            gcp_credentials = "%s"
+            gcp_credentials = "gcp_credentials.json"
             """, projectId, gcpKeyPath);
 
-        String tfvarsKey = userPrefix + "gcp_terraform.tfvars";
+        String tfvarsKey = userPrefix + "terraform.tfvars";
         s3Client.putObject(bucketName, tfvarsKey, tfvarsContent);
         return s3Client.getUrl(bucketName, tfvarsKey).toString(); // S3 URL 반환
     }
