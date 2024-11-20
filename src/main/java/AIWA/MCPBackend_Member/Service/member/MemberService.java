@@ -8,7 +8,9 @@ import AIWA.MCPBackend_Member.Repository.MemberRepository;
 import AIWA.MCPBackend_Member.Service.s3.S3Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -59,7 +61,7 @@ public class MemberService {
     }
 
     // AWS 및 GCP 키 추가/수정
-    public String addOrUpdateAwsAndGcpKey(String email, String companyName, String accessKey, String secretKey, String gcpKeyContent) {
+    public String addOrUpdateAwsAndGcpKey(String email, String companyName, String accessKey, String secretKey, String projectId, MultipartFile gcpKeyFile) throws IOException {
         // 회원 조회
         Member member = getMemberByEmail(email);
         if (member == null) {
@@ -74,9 +76,14 @@ public class MemberService {
         aiwaKey.setAwsTfvarsUrl(awsTfvarsUrl);
 
         // GCP 키 처리 (GCP 키가 제공된 경우에만 업데이트)
-        if (gcpKeyContent != null && !gcpKeyContent.isEmpty()) {
-            String gcpKeyPath = s3Service.uploadGcpKeyFile(email, gcpKeyContent);
+        if (gcpKeyFile != null && !gcpKeyFile.isEmpty()) {
+            // GCP 자격 증명 파일 업로드
+            String gcpKeyPath = s3Service.uploadGcpKeyFile(email, gcpKeyFile);
             aiwaKey.setGcpKeyPath(gcpKeyPath);
+
+            // GCP tfvars 파일 생성 및 URL 반환
+            String gcpTfvarsUrl = s3Service.createGcpTfvarsFile(email,projectId); // GCP tfvars 생성
+            aiwaKey.setGcpTfvarsUrl(gcpTfvarsUrl);
         }
 
         // 회원 정보 저장
@@ -116,6 +123,9 @@ public class MemberService {
         // GCP 키를 삭제하고 S3에서 GCP 키 파일도 삭제
         member.getAiwaKeys().removeIf(key -> "GCP".equalsIgnoreCase(key.getCompanyName()));
         s3Service.deleteGcpKeyFile(member.getEmail());
+
+        // GCP tfvars 파일 삭제
+        s3Service.deleteGcpTfvarsFile(member.getEmail());
 
         return memberRepository.save(member);
     }

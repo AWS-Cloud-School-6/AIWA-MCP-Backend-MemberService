@@ -4,10 +4,10 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
+import java.io.IOException;
+import java.io.InputStream;
 
 @Service
 @RequiredArgsConstructor
@@ -87,15 +87,34 @@ public class S3Service {
         return s3Client.getUrl(bucketName, tfvarsKey).toString(); // S3 URL 반환
     }
 
+    // GCP tfvars 파일 생성
+    public String createGcpTfvarsFile(String userId, String gcpProjectId) {
+        String userPrefix = "users/" + userId + "/GCP/";
+        String tfvarsContent = String.format("""
+            gcp_project_id = "%s"
+            gcp_credentials = "users/%s/GCP/gcp_credentials.json"
+            """, gcpProjectId, userId);
+
+        String tfvarsKey = userPrefix + "gcp_terraform.tfvars";
+        s3Client.putObject(bucketName, tfvarsKey, tfvarsContent);
+        return s3Client.getUrl(bucketName, tfvarsKey).toString(); // S3 URL 반환
+    }
+
     // GCP 자격 증명 파일 업로드
-    public String uploadGcpKeyFile(String userId, String gcpKeyContent) {
+    public String uploadGcpKeyFile(String userId, MultipartFile file) throws IOException {
         String userPrefix = "users/" + userId + "/GCP/";
         String gcpKeyFileKey = userPrefix + "gcp_credentials.json";
-        byte[] gcpKeyBytes = gcpKeyContent.getBytes(StandardCharsets.UTF_8);
 
+        // MultipartFile에서 InputStream을 추출
+        InputStream inputStream = file.getInputStream();
+
+        // 파일 메타데이터 설정
         ObjectMetadata metadata = new ObjectMetadata();
-        metadata.setContentLength(gcpKeyBytes.length);
-        s3Client.putObject(bucketName, gcpKeyFileKey, new ByteArrayInputStream(gcpKeyBytes), metadata);
+        metadata.setContentLength(file.getSize());
+        metadata.setContentType(file.getContentType());
+
+        // S3에 파일 업로드
+        s3Client.putObject(bucketName, gcpKeyFileKey, inputStream, metadata);
 
         return s3Client.getUrl(bucketName, gcpKeyFileKey).toString(); // S3 URL 반환
     }
@@ -113,6 +132,14 @@ public class S3Service {
         String awsTfvarsKey = "users/" + userId + "/AWS/aws_terraform.tfvars";
         if (s3Client.doesObjectExist(bucketName, awsTfvarsKey)) {
             s3Client.deleteObject(bucketName, awsTfvarsKey);
+        }
+    }
+
+    // GCP tfvars 파일 삭제
+    public void deleteGcpTfvarsFile(String userId) {
+        String gcpTfvarsKey = "users/" + userId + "/GCP/gcp_terraform.tfvars";
+        if (s3Client.doesObjectExist(bucketName, gcpTfvarsKey)) {
+            s3Client.deleteObject(bucketName, gcpTfvarsKey);
         }
     }
 
