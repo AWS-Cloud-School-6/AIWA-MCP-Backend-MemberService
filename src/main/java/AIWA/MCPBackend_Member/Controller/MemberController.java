@@ -1,116 +1,98 @@
 package AIWA.MCPBackend_Member.Controller;
 
-import AIWA.MCPBackend_Member.Dto.*;
-import AIWA.MCPBackend_Member.Entity.AiwaKey;
-import AIWA.MCPBackend_Member.Entity.Member;
+import AIWA.MCPBackend_Member.Dto.AddAwsAndGcpKeyRequestDto;
+import AIWA.MCPBackend_Member.Dto.MemberDeleteRequestDto;
+import AIWA.MCPBackend_Member.Dto.MemberRequestDto;
 import AIWA.MCPBackend_Member.Service.member.MemberService;
-import AIWA.MCPBackend_Member.Service.response.ResponseService;
-import AIWA.MCPBackend_Member.response.CommonResult;
-import AIWA.MCPBackend_Member.response.ListResult;
-import AIWA.MCPBackend_Member.response.SingleResult;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 @RestController
+@RequestMapping("/members")
 @RequiredArgsConstructor
-@RequestMapping("/member/api/members")
 public class MemberController {
 
     private final MemberService memberService;
-    private final ResponseService responseService;
 
     // 회원 등록
     @PostMapping("/register")
-    public SingleResult<MemberResponseDto> registerMember(@RequestBody MemberRequestDto memberRequestDto) {
-        // 회원 등록
-        Member savedMember = memberService.registerMember(memberRequestDto);
-        MemberResponseDto memberResponseDto = MemberResponseDto.toDto(savedMember);
-        return responseService.getSingleResult(memberResponseDto);
+    public ResponseEntity<String> registerMember(@RequestBody MemberRequestDto memberRequestDto) {
+        try {
+            memberService.registerMember(memberRequestDto);
+            return ResponseEntity.ok("Member registered successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     // 회원 삭제
     @DeleteMapping("/delete")
-    public CommonResult deleteMember(@RequestBody MemberDeleteRequestDto deleteMemberRequestDto) {
-        // 회원 삭제
-        memberService.deleteMember(deleteMemberRequestDto);
-        return responseService.getSuccessResult();
+    public ResponseEntity<String> deleteMember(@RequestBody MemberDeleteRequestDto deleteMemberRequestDto) {
+        try {
+            memberService.deleteMember(deleteMemberRequestDto);
+            return ResponseEntity.ok("Member deleted successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // AWS 및 GCP 키 추가/수정
+    @PostMapping("/add-keys")
+    public ResponseEntity<String> addOrUpdateAwsAndGcpKey(@RequestBody AddAwsAndGcpKeyRequestDto addAwsAndGcpKeyRequestDto) {
+        try {
+            String result = memberService.addOrUpdateAwsAndGcpKey(
+                    addAwsAndGcpKeyRequestDto.getEmail(),
+                    addAwsAndGcpKeyRequestDto.getCompanyName(),
+                    addAwsAndGcpKeyRequestDto.getAccessKey(),
+                    addAwsAndGcpKeyRequestDto.getSecretKey(),
+                    addAwsAndGcpKeyRequestDto.getGcpKeyContent()
+            );
+            return ResponseEntity.ok(result);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // 회원 정보 조회
+    @GetMapping("/{email}")
+    public ResponseEntity<Object> getMemberByEmail(@PathVariable String email) {
+        try {
+            return ResponseEntity.ok(memberService.getMemberByEmail(email));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     // 모든 회원 조회
     @GetMapping("/all")
-    public ListResult<MemberResponseDto> getAllMembers() {
-        // 모든 회원 조회
-        List<Member> members = memberService.getAllMembers();
-        List<MemberResponseDto> memberResponseDtoList = members.stream()
-                .map(MemberResponseDto::toDto)
-                .collect(Collectors.toList());
-        return responseService.getListResult(memberResponseDtoList);
-    }
-
-    @GetMapping("/{email}/{companyName}")
-    public SingleResult<MemberCredentialDto> getMemberKey(
-            @PathVariable String email,
-            @PathVariable String companyName) {
-
-        System.out.println(email);
-        System.out.println(companyName);
-
-        Member findMember = memberService.getMemberByEmail(email);
-        if (findMember == null) {
-            return (SingleResult<MemberCredentialDto>) responseService.getFailResult("Member not found");
+    public ResponseEntity<Object> getAllMembers() {
+        try {
+            return ResponseEntity.ok(memberService.getAllMembers());
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-
-        Optional<AiwaKey> matchingKey = findMember.getAiwaKeys().stream()
-                .filter(key -> companyName.equalsIgnoreCase(key.getCompanyName()))
-                .findFirst();
-
-        if (matchingKey.isPresent()) {
-            AiwaKey aiwaKey = matchingKey.get();
-            MemberCredentialDto memberCredentialDto = new MemberCredentialDto(
-                    findMember.getEmail(),
-                    aiwaKey.getAccessKey(),
-                    aiwaKey.getSecretKey()
-            );
-            return responseService.getSingleResult(memberCredentialDto);
-        } else {
-            return (SingleResult<MemberCredentialDto>) responseService.getFailResult(
-                    "No key found for company: " + companyName
-            );
-        }
-    }
-
-
-
-    // AWS 키 추가/업데이트
-    @PostMapping("/add-aws-gcp-key")
-    public SingleResult<String> addAwsAndGcpKey(@RequestBody AddAwsAndGcpKeyRequestDto requestDto) {
-        String result = memberService.addOrUpdateAwsAndGcpKey(
-                requestDto.getEmail(),
-                requestDto.getCompanyName(),
-                requestDto.getAccessKey(),
-                requestDto.getSecretKey(),
-                requestDto.getGcpKeyContent()
-        );
-        return responseService.getSingleResult(result);
     }
 
     // AWS 키 삭제
-    @DeleteMapping("/delete-aws-key")
-    public CommonResult deleteAwsKey(@RequestBody DeleteKeyRequestDto deleteKeyRequestDto) {
-        // AWS 키 삭제
-        memberService.removeAwsKey(deleteKeyRequestDto.getMemberId());
-        return responseService.getSuccessResult();
+    @DeleteMapping("/remove/aws/{memberId}")
+    public ResponseEntity<String> removeAwsKey(@PathVariable Long memberId) {
+        try {
+            memberService.removeAwsKey(memberId);
+            return ResponseEntity.ok("AWS key removed successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     // GCP 키 삭제
-    @DeleteMapping("/delete-gcp-key")
-    public CommonResult deleteGcpKey(@RequestBody DeleteKeyRequestDto deleteKeyRequestDto) {
-        // GCP 키 삭제
-        memberService.removeGcpKey(deleteKeyRequestDto.getMemberId());
-        return responseService.getSuccessResult();
+    @DeleteMapping("/remove/gcp/{memberId}")
+    public ResponseEntity<String> removeGcpKey(@PathVariable Long memberId) {
+        try {
+            memberService.removeGcpKey(memberId);
+            return ResponseEntity.ok("GCP key removed successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

@@ -16,7 +16,7 @@ public class S3Service {
     private final AmazonS3 s3Client;
     private final String bucketName = "aiwa-terraform";
 
-    // 사용자 디렉토리 생성 (AWS와 GCP 디렉토리를 분리)
+    // 사용자 디렉토리 생성 (AWS 및 GCP 디렉토리 포함)
     public void createUserAWSDirectory(String userId) {
         String userPrefix = "users/" + userId + "/AWS/";
         uploadAwsInitialFiles(userPrefix);

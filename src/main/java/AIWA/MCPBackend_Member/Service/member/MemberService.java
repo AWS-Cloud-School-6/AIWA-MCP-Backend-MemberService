@@ -18,19 +18,21 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final S3Service s3Service;
 
+    // 회원 등록
     public Member registerMember(MemberRequestDto memberRequestDto) {
         if (memberRepository.findByEmail(memberRequestDto.getEmail()) != null) {
             throw new RuntimeException("Email already exists");
         }
         // 사용자 디렉터리 생성 (AWS 및 GCP 디렉토리 포함)
         s3Service.createUserAWSDirectory(memberRequestDto.getEmail());
-        s3Service.createUserGCPDirectory(memberRequestDto.getEmail());  // GCP 디렉토리 추가
+        s3Service.createUserGCPDirectory(memberRequestDto.getEmail());
 
         // 회원 생성
         Member regiMember = new Member(memberRequestDto.getName(), memberRequestDto.getPassword(), memberRequestDto.getEmail());
         return memberRepository.save(regiMember);
     }
 
+    // 회원 삭제
     public void deleteMember(MemberDeleteRequestDto deleteMemberRequestDto) {
         String email = deleteMemberRequestDto.getEmail();
 
@@ -55,7 +57,6 @@ public class MemberService {
     public List<Member> getAllMembers() {
         return memberRepository.findAll();
     }
-
 
     // AWS 및 GCP 키 추가/수정
     public String addOrUpdateAwsAndGcpKey(String email, String companyName, String accessKey, String secretKey, String gcpKeyContent) {
@@ -96,7 +97,6 @@ public class MemberService {
                     return newKey;
                 });
     }
-
 
     // AWS 키 삭제
     public Member removeAwsKey(Long memberId) {
