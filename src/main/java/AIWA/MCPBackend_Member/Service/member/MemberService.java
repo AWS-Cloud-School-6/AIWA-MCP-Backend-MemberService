@@ -72,7 +72,7 @@ public class MemberService {
         AiwaKey aiwaKey = findOrCreateAiwaKey(member, companyName);
         aiwaKey.setAccessKey(accessKey);
         aiwaKey.setSecretKey(secretKey);
-        
+
         // AWS tfvars 파일 생성 및 URL 반환
         String awsTfvarsUrl = s3Service.createAwsTfvarsFile(email, accessKey, secretKey);
         aiwaKey.setAwsTfvarsUrl(awsTfvarsUrl);
@@ -84,7 +84,7 @@ public class MemberService {
             aiwaKey.setGcpKeyPath(gcpKeyPath);
 
             // GCP tfvars 파일 생성 및 URL 반환
-            String gcpTfvarsUrl = s3Service.createGcpTfvarsFile(email,projectId); // GCP tfvars 생성
+            String gcpTfvarsUrl = s3Service.createGcpTfvarsFile(email,projectId,gcpKeyPath); // GCP tfvars 생성
             aiwaKey.setGcpTfvarsUrl(gcpTfvarsUrl);
         }
 

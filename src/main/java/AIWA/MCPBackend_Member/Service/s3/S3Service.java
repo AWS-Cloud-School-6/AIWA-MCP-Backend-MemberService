@@ -88,12 +88,12 @@ public class S3Service {
     }
 
     // GCP tfvars 파일 생성
-    public String createGcpTfvarsFile(String userId, String gcpProjectId) {
+    public String createGcpTfvarsFile(String userId,String projectId, String gcpKeyPath) {
         String userPrefix = "users/" + userId + "/GCP/";
         String tfvarsContent = String.format("""
             gcp_project_id = "%s"
-            gcp_credentials = "users/%s/GCP/gcp_credentials.json"
-            """, gcpProjectId, userId);
+            gcp_credentials = "%s"
+            """, projectId, gcpKeyPath);
 
         String tfvarsKey = userPrefix + "gcp_terraform.tfvars";
         s3Client.putObject(bucketName, tfvarsKey, tfvarsContent);
