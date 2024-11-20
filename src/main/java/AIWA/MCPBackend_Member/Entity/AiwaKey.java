@@ -23,6 +23,8 @@ public class AiwaKey {
     private String secretKey;
     private String gcpKeyPath;
 
+    private String awsTfvarsUrl;
+
     @ManyToOne
     @JoinColumn(name = "member_id")
     private Member member;

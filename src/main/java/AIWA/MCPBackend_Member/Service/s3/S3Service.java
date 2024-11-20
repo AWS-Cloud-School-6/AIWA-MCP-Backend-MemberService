@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -15,13 +16,19 @@ public class S3Service {
     private final AmazonS3 s3Client;
     private final String bucketName = "aiwa-terraform";
 
-    // 사용자 디렉토리 생성
-    public void createUserDirectory(String userId) {
-        String userPrefix = "users/" + userId + "/";
-        uploadInitialFiles(userPrefix);
+    // 사용자 디렉토리 생성 (AWS와 GCP 디렉토리를 분리)
+    public void createUserAWSDirectory(String userId) {
+        String userPrefix = "users/" + userId + "/AWS/";
+        uploadAwsInitialFiles(userPrefix);
     }
 
-    private void uploadInitialFiles(String userPrefix) {
+    public void createUserGCPDirectory(String userId) {
+        String userPrefix = "users/" + userId + "/GCP/";
+        uploadGcpInitialFiles(userPrefix);
+    }
+
+    // AWS 초기 파일 업로드
+    private void uploadAwsInitialFiles(String userPrefix) {
         String mainTfContent = """
             variable "aws_access_key" {
               description = "AWS Access Key"
@@ -43,9 +50,33 @@ public class S3Service {
         s3Client.putObject(bucketName, userPrefix + "main.tf", mainTfContent);
     }
 
+    // GCP 초기 파일 업로드
+    private void uploadGcpInitialFiles(String userPrefix) {
+        String mainTfContent = """
+        variable "gcp_project_id" {
+          description = "GCP Project ID"
+          type        = string
+        }
+
+        variable "gcp_credentials" {
+          description = "GCP Credentials JSON file content"
+          type        = string
+          sensitive   = true
+        }
+
+        provider "google" {
+          project     = var.gcp_project_id
+          region      = "asia-northeast3"
+          credentials = var.gcp_credentials
+        }
+        """;
+
+        s3Client.putObject(bucketName, userPrefix + "main.tf", mainTfContent);
+    }
+
     // AWS tfvars 파일 생성
     public String createAwsTfvarsFile(String userId, String accessKey, String secretKey) {
-        String userPrefix = "users/" + userId + "/";
+        String userPrefix = "users/" + userId + "/AWS/";
         String tfvarsContent = String.format("""
             aws_access_key = "%s"
             aws_secret_key = "%s"
@@ -58,7 +89,7 @@ public class S3Service {
 
     // GCP 자격 증명 파일 업로드
     public String uploadGcpKeyFile(String userId, String gcpKeyContent) {
-        String userPrefix = "users/" + userId + "/";
+        String userPrefix = "users/" + userId + "/GCP/";
         String gcpKeyFileKey = userPrefix + "gcp_credentials.json";
         byte[] gcpKeyBytes = gcpKeyContent.getBytes(StandardCharsets.UTF_8);
 
@@ -68,9 +99,10 @@ public class S3Service {
 
         return s3Client.getUrl(bucketName, gcpKeyFileKey).toString(); // S3 URL 반환
     }
+
     // GCP 키 파일 삭제
     public void deleteGcpKeyFile(String userId) {
-        String gcpKeyFileKey = "users/" + userId + "/gcp_credentials.json";
+        String gcpKeyFileKey = "users/" + userId + "/GCP/gcp_credentials.json";
         if (s3Client.doesObjectExist(bucketName, gcpKeyFileKey)) {
             s3Client.deleteObject(bucketName, gcpKeyFileKey);
         }
@@ -78,12 +110,11 @@ public class S3Service {
 
     // AWS tfvars 파일 삭제
     public void deleteAwsTfvarsFile(String userId) {
-        String awsTfvarsKey = "users/" + userId + "/aws_terraform.tfvars";
+        String awsTfvarsKey = "users/" + userId + "/AWS/aws_terraform.tfvars";
         if (s3Client.doesObjectExist(bucketName, awsTfvarsKey)) {
             s3Client.deleteObject(bucketName, awsTfvarsKey);
         }
     }
-
 
     // 사용자 디렉토리 삭제
     public void deleteUserDirectory(String userId) {
@@ -99,5 +130,4 @@ public class S3Service {
             request.setContinuationToken(result.getNextContinuationToken());
         } while (result.isTruncated());
     }
-
 }

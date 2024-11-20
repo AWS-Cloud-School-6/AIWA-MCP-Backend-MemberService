@@ -1,6 +1,5 @@
 package AIWA.MCPBackend_Member.Service.member;
 
-
 import AIWA.MCPBackend_Member.Dto.MemberDeleteRequestDto;
 import AIWA.MCPBackend_Member.Dto.MemberRequestDto;
 import AIWA.MCPBackend_Member.Entity.AiwaKey;
@@ -23,9 +22,12 @@ public class MemberService {
         if (memberRepository.findByEmail(memberRequestDto.getEmail()) != null) {
             throw new RuntimeException("Email already exists");
         }
-        s3Service.createUserDirectory(memberRequestDto.getEmail());
-        Member regiMember=new Member(memberRequestDto.getName(), memberRequestDto.getPassword(), memberRequestDto.getEmail());
+        // 사용자 디렉터리 생성 (AWS 및 GCP 디렉토리 포함)
+        s3Service.createUserAWSDirectory(memberRequestDto.getEmail());
+        s3Service.createUserGCPDirectory(memberRequestDto.getEmail());  // GCP 디렉토리 추가
 
+        // 회원 생성
+        Member regiMember = new Member(memberRequestDto.getName(), memberRequestDto.getPassword(), memberRequestDto.getEmail());
         return memberRepository.save(regiMember);
     }
 
@@ -45,7 +47,6 @@ public class MemberService {
         memberRepository.delete(member);
     }
 
-
     // 특정 회원 조회
     public Member getMemberByEmail(String email) {
         return memberRepository.findByEmail(email);
@@ -56,6 +57,7 @@ public class MemberService {
     }
 
 
+    // AWS 및 GCP 키 추가/수정
     public String addOrUpdateAwsAndGcpKey(String email, String companyName, String accessKey, String secretKey, String gcpKeyContent) {
         // 회원 조회
         Member member = getMemberByEmail(email);
@@ -63,30 +65,17 @@ public class MemberService {
             throw new RuntimeException("Member not found with Email: " + email);
         }
 
-        // AWS 키 처리: "AWS" 또는 다른 회사 키를 처리 가능하도록 수정
-        Optional<AiwaKey> existingKey = member.getAiwaKeys().stream()
-                .filter(key -> companyName.equalsIgnoreCase(key.getCompanyName()))
-                .findFirst();
+        // AWS 및 GCP 키 업데이트 또는 추가
+        AiwaKey aiwaKey = findOrCreateAiwaKey(member, companyName);
 
-        if (existingKey.isPresent()) {
-            // 기존 키 업데이트
-            AiwaKey key = existingKey.get();
-            key.setAccessKey(accessKey);
-            key.setSecretKey(secretKey);
+        // AWS tfvars 파일 생성 및 URL 반환
+        String awsTfvarsUrl = s3Service.createAwsTfvarsFile(email, accessKey, secretKey);
+        aiwaKey.setAwsTfvarsUrl(awsTfvarsUrl);
 
-            // GCP 키 내용이 제공된 경우에만 GCP 키 경로 업데이트
-            if (gcpKeyContent != null && !gcpKeyContent.isEmpty()) {
-                String gcpKeyPath = s3Service.uploadGcpKeyFile(email, gcpKeyContent);
-                key.setGcpKeyPath(gcpKeyPath);
-            }
-        } else {
-            // 새로운 키 추가
-            String gcpKeyPath = gcpKeyContent != null && !gcpKeyContent.isEmpty()
-                    ? s3Service.uploadGcpKeyFile(email, gcpKeyContent)
-                    : null;
-
-            AiwaKey newKey = new AiwaKey(companyName, accessKey, secretKey, gcpKeyPath, member);
-            member.getAiwaKeys().add(newKey);
+        // GCP 키 처리 (GCP 키가 제공된 경우에만 업데이트)
+        if (gcpKeyContent != null && !gcpKeyContent.isEmpty()) {
+            String gcpKeyPath = s3Service.uploadGcpKeyFile(email, gcpKeyContent);
+            aiwaKey.setGcpKeyPath(gcpKeyPath);
         }
 
         // 회원 정보 저장
@@ -95,9 +84,21 @@ public class MemberService {
         return String.format("%s keys have been successfully added or updated.", companyName);
     }
 
+    // AiwaKey를 찾아서 없으면 새로 생성
+    private AiwaKey findOrCreateAiwaKey(Member member, String companyName) {
+        // 기존 키가 있으면 업데이트, 없으면 새로 생성
+        return member.getAiwaKeys().stream()
+                .filter(key -> companyName.equalsIgnoreCase(key.getCompanyName()))
+                .findFirst()
+                .orElseGet(() -> {
+                    AiwaKey newKey = new AiwaKey(companyName, null, null, null, member);
+                    member.getAiwaKeys().add(newKey);
+                    return newKey;
+                });
+    }
 
 
-
+    // AWS 키 삭제
     public Member removeAwsKey(Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("Member not found"));
@@ -107,7 +108,7 @@ public class MemberService {
         return memberRepository.save(member);
     }
 
-
+    // GCP 키 삭제
     public Member removeGcpKey(Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("Member not found"));
@@ -118,6 +119,4 @@ public class MemberService {
 
         return memberRepository.save(member);
     }
-
-
 }
