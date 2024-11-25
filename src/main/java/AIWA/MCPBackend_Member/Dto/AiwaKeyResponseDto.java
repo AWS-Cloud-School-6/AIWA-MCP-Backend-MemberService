@@ -11,6 +11,7 @@ public class AiwaKeyResponseDto {
     private String companyName;   // 회사 이름 (AWS, GCP 등)
     private String accessKey;     // Access Key (AWS의 경우만 있을 수 있음)
     private String secretKey;     // Secret Key (AWS의 경우만 있을 수 있음)
+    private String projectId;
     private String gcpKeyPath;    // GCP Key Path (GCP의 경우만 있을 수 있음)
     private String awsTfvarsUrl;
     private String gcpTfvarsUrl;
@@ -21,6 +22,7 @@ public class AiwaKeyResponseDto {
         dto.setCompanyName(aiwaKey.getCompanyName());
         dto.setAccessKey(aiwaKey.getAccessKey());
         dto.setSecretKey(aiwaKey.getSecretKey());
+        dto.setProjectId(aiwaKey.getProjectId());
         dto.setGcpKeyPath(aiwaKey.getGcpKeyPath());
         dto.setAwsTfvarsUrl(aiwaKey.getAwsTfvarsUrl());
         dto.setGcpTfvarsUrl(aiwaKey.getGcpTfvarsUrl());

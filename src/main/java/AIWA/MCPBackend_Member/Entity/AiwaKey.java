@@ -21,6 +21,8 @@ public class AiwaKey {
 
     private String accessKey;
     private String secretKey;
+
+    private String projectId;
     private String gcpKeyPath;
 
     private String awsTfvarsUrl;
@@ -31,10 +33,11 @@ public class AiwaKey {
     @JoinColumn(name = "member_id")
     private Member member;
 
-    public AiwaKey(String companyName, String accessKey, String secretKey, String gcpKeyPath, Member member) {
+    public AiwaKey(String companyName, String accessKey, String secretKey, String projectId,String gcpKeyPath, Member member) {
         this.companyName = companyName;
         this.accessKey = accessKey;
         this.secretKey = secretKey;
+        this.projectId = projectId;
         this.gcpKeyPath = gcpKeyPath;
         this.member = member;
     }

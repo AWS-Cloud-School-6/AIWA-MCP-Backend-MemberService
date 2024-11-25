@@ -101,7 +101,7 @@ public class MemberService {
                 .filter(key -> companyName.equalsIgnoreCase(key.getCompanyName()))
                 .findFirst()
                 .orElseGet(() -> {
-                    AiwaKey newKey = new AiwaKey(companyName, null, null, null, member);
+                    AiwaKey newKey = new AiwaKey(companyName, null,null,null, null, member);
                     member.getAiwaKeys().add(newKey);
                     return newKey;
                 });
