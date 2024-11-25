@@ -53,33 +53,41 @@ public class MemberController {
         return responseService.getListResult(memberResponseDtoList);
     }
 
-    // 특정 회원 조회
     @GetMapping("/{email}/{companyName}")
-    public SingleResult<MemberCredentialDto> getMemberKey(
+    public SingleResult<MemberResponseDto> getMemberAndKeyByEmailAndCompany(
             @PathVariable String email,
             @PathVariable String companyName) {
 
-        Member findMember = memberService.getMemberByEmail(email);
-        if (findMember == null) {
-            return (SingleResult<MemberCredentialDto>) responseService.getFailResult("Member not found");
+        // 서비스에서 멤버 조회
+        Member member = memberService.getMemberByEmail(email);
+
+        if (member == null) {
+            throw new IllegalArgumentException("Member not found");
         }
 
-        Optional<AiwaKey> matchingKey = findMember.getAiwaKeys().stream()
+        // AiwaKey 조회
+        Optional<AiwaKey> optionalKey = member.getAiwaKeys().stream()
                 .filter(key -> companyName.equalsIgnoreCase(key.getCompanyName()))
                 .findFirst();
 
-        if (matchingKey.isPresent()) {
-            AiwaKey aiwaKey = matchingKey.get();
-            MemberCredentialDto memberCredentialDto = new MemberCredentialDto(
-                    findMember.getEmail(),
-                    aiwaKey.getAccessKey(),
-                    aiwaKey.getSecretKey()
-            );
-            return responseService.getSingleResult(memberCredentialDto);
+        if (optionalKey.isPresent()) {
+            AiwaKey aiwaKey = optionalKey.get();
+
+            // MemberResponseDto 생성
+            MemberResponseDto memberResponseDto = MemberResponseDto.toDto(member);
+
+            // AiwaKeyResponseDto 추가 (해당 회사 키만 추가)
+            List<AiwaKeyResponseDto> filteredKeys = List.of(AiwaKeyResponseDto.toDto(aiwaKey));
+            memberResponseDto.setAiwaKeys(filteredKeys);
+
+            return responseService.getSingleResult(memberResponseDto);
         } else {
-            return (SingleResult<MemberCredentialDto>) responseService.getFailResult("No key found for company: " + companyName);
+            throw new IllegalArgumentException("Key for company '" + companyName + "' not found");
         }
     }
+
+
+
 
     // AWS 및 GCP 키 추가/업데이트
     @PostMapping("/add-aws-gcp-key")
