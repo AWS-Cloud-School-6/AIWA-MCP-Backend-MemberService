@@ -72,6 +72,7 @@ public class MemberService {
         AiwaKey aiwaKey = findOrCreateAiwaKey(member, companyName);
         aiwaKey.setAccessKey(accessKey);
         aiwaKey.setSecretKey(secretKey);
+        aiwaKey.setProjectId(projectId);
 
         // AWS tfvars 파일 생성 및 URL 반환
         String awsTfvarsUrl = s3Service.createAwsTfvarsFile(email, accessKey, secretKey);
